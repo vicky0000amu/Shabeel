@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shabeel Locator</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        /* Reset and base styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .app {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Header styles */
+        header {
+            background-color: rgb(17, 170, 170);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Main content styles */
+        main {
+            flex: 1;
+            padding: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filters select, .filters input {
+            padding: 0.5rem;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .add-button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .add-button:hover {
+            background-color: #0b7dda;
+        }
+
+        /* Map container */
+        #map {
+            height: 500px;
+            width: 100%;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* Shabeel list */
+        .shabeel-list {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .shabeel-list h2 {
+            margin-bottom: 1rem;
+            color: #4CAF50;
+        }
+
+        .shabeel-list ul {
+            list-style: none;
+        }
+
+        .shabeel-list li {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .shabeel-list li:last-child {
+            border-bottom: none;
+        }
+
+        .shabeel-list h3 {
+            color: #2196F3;
+            margin-bottom: 0.5rem;
+        }
+
+        .verified {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        /* Form styles */
+        .shabeel-form {
+            background-color: white;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .shabeel-form h2 {
+            margin-bottom: 1rem;
+            color: #2196F3;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+        }
+
+        .shabeel-form button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .shabeel-form button:hover {
+            background-color: #3e8e41;
+        }
+
+        /* Footer styles */
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            margin-top: auto;
+        }
+
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header>
+            <h1>🪯Shabeel Locator</h1>
+            <p>Waheguru Ji Da Khalsa Waheguru Ji Di Fateh🪯</p>
+            <p><i>Sewa Karo Mitha Jal Piyoo</i></p>
+        </header>
+
+        <main>
+            <div class="controls">
+                <div class="filters">
+                    <select id="type-filter">
+                        <option value="all">All Types</option>
+                        <option value="gurdwara">Gurdwara</option>
+                        <option value="mosque">Pind</option>
+                        <option value="ngo">NGO</option>
+                        <option value="community">Community</option>
+                    </select>
+                    
+                    <label>
+                        <input type="checkbox" id="verified-filter">
+                        Verified Only
+                    </label>
+                </div>
+                
+                <button id="toggle-form" class="add-button">Add New Shabeel</button>
+            </div>
+
+            <div id="shabeel-form" class="shabeel-form">
+                <h2>Add New Shabeel Location</h2>
+                <form id="new-shabeel-form">
+                    <div class="form-group">
+                        <label for="name">Name:</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="type">Type:</label>
+                        <select id="type" name="type" required>
+                            <option value="gurdwara">Gurdwara</option>
+                            <option value="mosque">Pind</option>
+                            <option value="ngo">NGO</option>
+                            <option value="community">Community</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="address">Address:</label>
+                        <input type="text" id="address" name="address" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description">Description:</label>
+                        <textarea id="description" name="description"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="lat">Latitude:</label>
+                        <input type="number" step="0.0001" id="lat" name="lat" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="lng">Longitude:</label>
+                        <input type="number" step="0.0001" id="lng" name="lng" required>
+                    </div>
+                    
+                    <button type="submit">Submit</button>
+                </form>
+            </div>
+
+            <div id="map"></div>
+
+            <div class="shabeel-list">
+                <h2>Nearby Shabeels</h2>
+                <ul id="shabeel-list">
+                    <!-- Shabeels will be added here by JavaScript -->
+                </ul>
+            </div>
+        </main>
+
+        <footer>
+            <p>© <span id="year"></span> Punjabi Shabeel Locator</p>
+            <p>A community service project</p>
+            <p><i>by Vicky Amrinder Singh</i></p>
+        </footer>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Sample data
+        const shabeels = [
+            {
+                id: 1,
+                name: "Golden Temple Shabeel",
+                location: [31.6200, 74.8765],
+                type: "gurdwara",
+                address: "Golden Temple Road, Amritsar",
+                verified: true,
+                description: "24/7 cold water service"
+            },
+            {
+                id: 2,
+                name: "Baba Bakala Sahib Gurdwara",
+                location: [31.6353, 74.8852],
+                type: "gurdwara",
+                address: "Baba Bakala, Amritsar",
+                verified: true,
+                description: "Open Now"
+            },
+            {
+                id: 3,
+                name: "Community Shabeel",
+                location: [30.7333, 76.7794],
+                type: "ngo",
+                address: "Sector 17, Chandigarh",
+                verified: true,
+                description: "Summer months only"
+            },
+            {
+                id: 4,
+                name: "Pind Shabeel",
+                location: [31.3069, 75.5793],
+                type: "pind",
+                address: "Model Town, Jalandhar",
+                verified: true,
+                description: "Free water for all"
+            },
+            {
+                id: 5,
+                name: "NGO Shabeel",
+                location: [30.7333, 76.7794],
+                type: "ngo",
+                address: "Sector 22, Chandigarh",
+                verified: true,
+                description: "Community service"
+            }
+        ];
+
+        // DOM elements
+        const mapElement = document.getElementById('map');
+        const shabeelListElement = document.getElementById('shabeel-list');
+        const typeFilter = document.getElementById('type-filter');
+        const verifiedFilter = document.getElementById('verified-filter');
+        const toggleFormButton = document.getElementById('toggle-form');
+        const shabeelForm = document.getElementById('shabeel-form');
+        const newShabeelForm = document.getElementById('new-shabeel-form');
+        const yearElement = document.getElementById('year');
+
+        // Initialize map
+        const map = L.map('map').setView([31.1471, 75.3412], 8); // Default to Punjab center
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Markers array
+        const markers = [];
+
+        // Current year in footer
+        yearElement.textContent = new Date().getFullYear();
+
+        // Display shabeels on map and list
+        function displayShabeels() {
+            // Clear existing markers
+            markers.forEach(marker => map.removeLayer(marker));
+            markers.length = 0;
+            
+            // Clear list
+            shabeelListElement.innerHTML = '';
+            
+            // Get filter values
+            const typeFilterValue = typeFilter.value;
+            const verifiedFilterValue = verifiedFilter.checked;
+            
+            // Filter shabeels
+            const filteredShabeels = shabeels.filter(shabeel => {
+                const typeMatch = typeFilterValue === 'all' || shabeel.type === typeFilterValue;
+                const verifiedMatch = !verifiedFilterValue || shabeel.verified;
+                return typeMatch && verifiedMatch;
+            });
+            
+            // Add to map and list
+            filteredShabeels.forEach(shabeel => {
+                // Add marker to map
+                const marker = L.marker(shabeel.location).addTo(map)
+                    .bindPopup(`
+                        <h3>${shabeel.name}</h3>
+                        <p><strong>Type:</strong> ${shabeel.type}</p>
+                        <p><strong>Address:</strong> ${shabeel.address}</p>
+                        <p>${shabeel.description}</p>
+                        ${shabeel.verified ? '<p class="verified">✓ Verified</p>' : ''}
+                    `);
+                markers.push(marker);
+                
+                // Add to list
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <h3>${shabeel.name}</h3>
+                    <p><strong>Type:</strong> ${shabeel.type}</p>
+                    <p><strong>Address:</strong> ${shabeel.address}</p>
+                    <p>${shabeel.description}</p>
+                    ${shabeel.verified ? '<span class="verified">✓ Verified</span>' : ''}
+                `;
+                shabeelListElement.appendChild(li);
+            });
+            
+            // Show message if no shabeels
+            if (filteredShabeels.length === 0) {
+                const li = document.createElement('li');
+                li.textContent = 'No shabeels found matching your filters.';
+                shabeelListElement.appendChild(li);
+            }
+            
+            // Fit map to show all markers if there are any
+            if (filteredShabeels.length > 0) {
+                const group = new L.featureGroup(markers);
+                map.fitBounds(group.getBounds());
+            }
+        }
+
+        // Toggle form visibility
+        toggleFormButton.addEventListener('click', () => {
+            shabeelForm.style.display = shabeelForm.style.display === 'block' ? 'none' : 'block';
+            toggleFormButton.textContent = shabeelForm.style.display === 'block' ? 'Cancel' : 'Add New Shabeel';
+        });
+
+        // Handle form submission
+        newShabeelForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const newShabeel = {
+                id: shabeels.length + 1,
+                name: document.getElementById('name').value,
+                location: [
+                    parseFloat(document.getElementById('lat').value),
+                    parseFloat(document.getElementById('lng').value)
+                ],
+                type: document.getElementById('type').value,
+                address: document.getElementById('address').value,
+                description: document.getElementById('description').value,
+                verified: false
+            };
+            
+            shabeels.push(newShabeel);
+            newShabeelForm.reset();
+            shabeelForm.style.display = 'none';
+            toggleFormButton.textContent = 'Add New Shabeel';
+            displayShabeels();
+        });
+
+        // Handle filter changes
+        typeFilter.addEventListener('change', displayShabeels);
+        verifiedFilter.addEventListener('change', displayShabeels);
+
+        // Try to get user's location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const userLocation = [position.coords.latitude, position.coords.longitude];
+                    const userMarker = L.marker(userLocation)
+                        .addTo(map)
+                        .bindPopup('Your Location');
+                    markers.push(userMarker);
+                    
+                    // Center map on user location
+                    map.setView(userLocation, 13);
+                },
+                (error) => {
+                    console.error("Error getting location:", error);
+                }
+            );
+        }
+
+        // Initial display
+        displayShabeels();
+    </script>
+</body>
+</html>
